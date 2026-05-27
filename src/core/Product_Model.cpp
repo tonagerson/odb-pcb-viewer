@@ -1,21 +1,20 @@
 #include <iostream>
-//#include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <string>
 #include <sstream>
-#include <QDebug>
-#include <memory>
-#include <iomanip>
+#include <vector>
 #include "Edge.hpp"
 #include "Outline.hpp"
 #include "Surface.hpp"
 #include "Product_Model.hpp"
 using namespace std;
 
-Product_Model::Product_Model(unit_measurement const &unit,int const &dcode,Surface const &s):
+Product_Model::Product_Model(unit_measurement const &unit,int const &dcode,Surface const &s,Matrix const &m):
 	_s(s),
 	_unit(unit),
-	_dcode(dcode)
+    _dcode(dcode),
+    _m(m)
 {}
 
 Surface Product_Model::get_surface(){
@@ -29,20 +28,18 @@ unit_measurement Product_Model::get_unit(){
 int Product_Model::get_dcode(){
 	return this->_dcode;
 }
-// souci de compilation donc j'utilise simplement std::string au lieu de filesystem::path
+Matrix Product_Model::get_matrix(){
+    return this->_m;
+}
 int Product_Model::Parse(std::string const &path){
-    // chemin de base + la suite
+
     std::string filepath = path + "/designodb/steps/board1/profile";
-
-
-	fstream f;
-    f.open(filepath);
+   fstream f;
+	f.open(filepath);
 	if (!f){
-
-        cerr << "No such file found:"<< filepath << endl;
+		cerr << "No such file found" << endl;
 		return 1;
 	}
-
 	string line;
 	unit_measurement unit;
 	int dcode;
@@ -83,16 +80,22 @@ int Product_Model::Parse(std::string const &path){
 	this->_unit = unit;
 	this->_dcode = dcode;
 	this->_s = Srf;
+    this->_m.Parse(path);
 	return 0;
 }
 
 void Product_Model::Print(){
-	cout << "Affichage : ... " << endl;
-	cout << "Le PCB est représnté par un rectangle dont les sommets sont les points suivant :\n " << endl;
 	Surface Srf = this->_s;
+	string unit = (this->_unit == INCH) ? "INCH" : "MM";
+	int dcode = this->_dcode;
+	cout << "PCB display ...\n" << endl;
+	cout << "Unit : " << unit << endl;
+	cout << "Dcode : " << dcode << endl;
 	for (auto &outline : Srf.get_outlineArr()){
+		cout << "\n --> Outline Begin \n" << endl;
 		for (auto &edge : outline.get_edgeArr()){
 			cout << "(" << setprecision(12) << edge.get_x() << "," << edge.get_y() << ")" << endl;
 		}
+		cout << "\n --> Outline End \n" << endl;
 	}
 }

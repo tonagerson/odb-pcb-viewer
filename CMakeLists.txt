@@ -29,7 +29,12 @@ set(PROJECT_SOURCES
     src/core/Surface.cpp
     src/core/Outline.cpp
     src/core/Segment.cpp
-     src/core/Edge.cpp
+    src/core/Edge.cpp
+    src/core/Matrix.cpp
+    src/core/Layer_descriptor.cpp
+    src/core/Step_descriptor.cpp
+    src/core/PCB_parser.cpp
+    src/core/form.cpp
 )
 
 set(PROJECT_HEADERS
@@ -45,11 +50,16 @@ set(PROJECT_HEADERS
     include/core/Outline.hpp
     include/core/Segment.hpp
     include/core/Edge.hpp
-)
+    include/core/Matrix.hpp
+    include/core/Layer_descriptor.hpp
+    include/core/Step_descriptor.hpp
+    include/core/form.hpp
 
+)
 add_executable(ODBViewer
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
+
 )
 
 target_link_libraries(ODBViewer PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Xml)
