@@ -6,6 +6,7 @@
 #include "ApplicationController.hpp"
 #include "ApplicationModel.hpp"
 #include "Viewer2D.hpp"
+#include <QListWidget>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -16,7 +17,9 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow(QWidget *parent = nullptr);
+    void populateLayerList();
     ~MainWindow();
+
 
 private:
     Ui::MainWindow *ui;
@@ -24,4 +27,5 @@ private:
     std::shared_ptr<ApplicationModel> _model;
     Viewer2D * _viewer2d;
     QMenu * _file_menu;
+    QListWidget* _list_layers;
 };

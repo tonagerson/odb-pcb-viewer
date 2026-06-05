@@ -17,20 +17,29 @@ Viewer2D::Viewer2D(std::shared_ptr<ApplicationModel> model, QWidget *parent) : Q
 
 Viewer2D::~Viewer2D() {}
 
+void Viewer2D::setLayerVisible(const std::string& layerName, bool visible) {
+    if (visible) {
+        _hidden_layers.erase(layerName); // On enlève des couches cachées
+    } else {
+        _hidden_layers.insert(layerName); // On la cache
+    }
+    this->update();
+}
+
 void Viewer2D::paintEvent(QPaintEvent *event)
 {
     QPainter painter;
     painter.begin(this);
 
-    // 1. FOND DE LA FENÊTRE EN NOIR
-    painter.fillRect(event->rect(), Qt::black);
+    //FOND DE LA FENETRE EN BLANCHE
+    painter.fillRect(event->rect(), Qt::white);
 
     if (_model->hasProductModel()) {
         Product_Model* pcb = _model->getProductModel();
 
-        // ==========================================
-        // 2. DESSIN DU CONTOUR DE LA CARTE EN VERT
-        // ==========================================
+
+        // DESSIN DU CONTOUR DE LA CARTE EN VERT
+
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(30, 120, 30));
 
@@ -63,6 +72,10 @@ void Viewer2D::paintEvent(QPaintEvent *event)
 
         for (Layer& layer : pcb->get_layers()) {
 
+            //on dessine pas si c'est pas dans la liste cahée
+            if (_hidden_layers.find(layer.get_layerName()) != _hidden_layers.end()) {
+                continue;
+            }
             // Filtrage des couches pleines
 
             layer_type type = pcb->get_matrix().get_layer_type(layer.get_layerName());
@@ -77,7 +90,7 @@ void Viewer2D::paintEvent(QPaintEvent *event)
 
             if (colorStr.length() >= 6) {
                 try {
-                    // ODB++ donne un % de 00 à 99, on le convertit pour Qt (0 à 255)
+                    // conversion pour Qt (0 à 255)
                     int r = std::stoi(colorStr.substr(0, 2)) * 255 / 99;
                     int g = std::stoi(colorStr.substr(2, 2)) * 255 / 99;
                     int b = std::stoi(colorStr.substr(4, 2)) * 255 / 99;
@@ -91,7 +104,7 @@ void Viewer2D::paintEvent(QPaintEvent *event)
 
             Feature feature = layer.get_feature();
 
-            // A. Dessin des Lignes (Pistes) et des Pads (Composants)
+            //  Dessin des Lignes (Pistes) et des Pads (Composants)
             for (Form* f : feature.get_forms()) {
 
                 Line* line = dynamic_cast<Line*>(f);
@@ -105,13 +118,13 @@ void Viewer2D::paintEvent(QPaintEvent *event)
                 Pad* pad = dynamic_cast<Pad*>(f);
                 if (pad != nullptr) {
                     QPointF p = _view_transform.transformToView(QPointF(pad->get_position().get_x(), pad->get_position().get_y()));
-                    // Dessine un petit cercle jaune pour marquer le pad/composant
+                    // Dessine un petit cercle jaune pour marquer composant
                     painter.drawEllipse(p, 2, 2);
                     continue;
                 }
             }
 
-            // B. Dessin des Surfaces (Plans de masse et grandes pastilles)
+            // Dessin des Surfaces
             for (Surface* surface : feature.get_surfaces()) {
                 QPainterPath featPath;
                 for (Outline& outline : surface->get_outlineArr()) {

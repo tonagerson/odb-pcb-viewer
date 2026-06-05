@@ -42,6 +42,7 @@ int Matrix::Parse(std::string const &path){
     context cont;
     layer_type lt;
     polarity pol;
+
     /*******************/
     while (getline(f, line)){
         istringstream iss(line);

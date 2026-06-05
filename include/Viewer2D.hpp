@@ -2,6 +2,8 @@
 #include "ApplicationModel.hpp"
 #include "core/GraphicObject.hpp"
 #include "core/ViewTransform.hpp"
+#include <set>
+#include <string>
 
 #include <QWidget>
 
@@ -10,6 +12,7 @@ class Viewer2D : public QWidget {
   public:
   Viewer2D(std::shared_ptr<ApplicationModel> model, QWidget *parent = nullptr);
   ~Viewer2D();
+  void setLayerVisible(const std::string& layerName, bool visible);
 
   protected:
   // Paint the objects stored in model
@@ -23,6 +26,7 @@ class Viewer2D : public QWidget {
 
   private:
   std::shared_ptr<ApplicationModel> _model;
+  std::set<std::string> _hidden_layers;
 
   // TrackBall
   bool _drag_active = false;

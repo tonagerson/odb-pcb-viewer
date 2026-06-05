@@ -3,6 +3,7 @@
 #include "ApplicationController.hpp"
 #include <QFileDialog>
 #include "core/Product_Model.hpp"
+#include "mainwindow.h"
 
 ApplicationController::ApplicationController(std::shared_ptr<ApplicationModel> model, Viewer2D * viewer2d)
 {
@@ -28,4 +29,9 @@ void ApplicationController::onOpenFileRequest()
     _model->setProductModel(pcb);
 
     _viewer2d->update();
+
+    MainWindow* mainWin = dynamic_cast<MainWindow*>(_viewer2d->parentWidget());
+    if (mainWin) {
+        mainWin->populateLayerList();
+    }
 }
