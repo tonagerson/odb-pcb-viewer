@@ -1,11 +1,11 @@
+#include <QPainterPath>
 #include "Viewer2D.hpp"
 #include <QPainter>
 #include <QPaintEvent>
-#include <QPainterPath>
-#include <QMouseEvent>
-#include <QDebug>
 #include "core/Product_Model.hpp"
-#include "core/form.hpp"
+#include "core/Feature.hpp"
+#include "core/Form.hpp"
+#include "core/Layer.hpp"
 
 Viewer2D::Viewer2D(std::shared_ptr<ApplicationModel> model, QWidget *parent) : QWidget(parent),
     _drag_active(false),
@@ -15,130 +15,126 @@ Viewer2D::Viewer2D(std::shared_ptr<ApplicationModel> model, QWidget *parent) : Q
     this->setMouseTracking(true);
 }
 
-Viewer2D::~Viewer2D()
-{
-}
+Viewer2D::~Viewer2D() {}
 
 void Viewer2D::paintEvent(QPaintEvent *event)
 {
-    // qDebug() << "Viewer2D::paintEvent " << this->size().width() << "," << this->size().height();
     QPainter painter;
     painter.begin(this);
 
-    //  pour lisser les lignes diagonales et les cercles
-    painter.setRenderHint(QPainter::Antialiasing);
+    // 1. FOND DE LA FENÊTRE EN NOIR
+    painter.fillRect(event->rect(), Qt::black);
 
-    //  Nettoyer l'écran
-    painter.setBrush(Qt::white);
-    painter.fillRect(event->rect(), Qt::white);
-
-    //  Dessiner l'axe X/Y de référence
-    if (_model->getAxis()) {
-        _model->getAxis()->paint(&painter, &_view_transform);
-    }
-
-    //  Dessiner le circuit imprimé
-    // if  le parser a bien chargé un modèle
     if (_model->hasProductModel()) {
-        //la carte
         Product_Model* pcb = _model->getProductModel();
-        //après la surface
-        Surface surf = pcb->get_surface();
 
-        std::vector<Outline> contours = surf.get_outlineArr();
-        QPainterPath chemin_carte;
+        // ==========================================
+        // 2. DESSIN DU CONTOUR DE LA CARTE EN VERT
+        // ==========================================
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(30, 120, 30));
 
-        //parcours de contour de la surface
-        for(Outline outline : surf.get_outlineArr()){
-            std::vector<Edge> edges = outline.get_edgeArr();//segment
+        Surface pcb_surface = pcb->get_surface();
+        QPainterPath boardPath;
 
-            if(edges.empty()) continue;
-            QPointF pt_depart_modele(edges[0].get_x(), edges[0].get_y());
-            QPointF pt_depart_ecran = _view_transform.transformToView(pt_depart_modele);
+        for (Outline& outline : pcb_surface.get_outlineArr()) {
+            std::vector<Edge*> edges = outline.get_edgeArr();
+            if (edges.empty()) continue;
 
-            //premier point du segment
-            chemin_carte.moveTo(pt_depart_ecran);
-            //on trace les lignes pour les points
-            for(size_t i = 1; i < edges.size(); i++){
-                QPointF pt_modele(edges[i].get_x(), edges[i].get_y());
-                QPointF pt_ecran = _view_transform.transformToView(pt_modele);
-                chemin_carte.lineTo(pt_ecran);
+            QPainterPath subPath;
+            QPointF startPt = _view_transform.transformToView(QPointF(edges[0]->get_x(), edges[0]->get_y()));
+            subPath.moveTo(startPt);
+
+            for (size_t i = 1; i < edges.size(); ++i) {
+                QPointF endPt = _view_transform.transformToView(QPointF(edges[i]->get_x(), edges[i]->get_y()));
+                subPath.lineTo(endPt);
             }
-            chemin_carte.closeSubpath();
+            subPath.closeSubpath();
+            boardPath.addPath(subPath);
         }
-
-        //Dessin de la carte
-        painter.setPen(QPen(Qt::black, 0));//contour
-        painter.setBrush(QBrush(QColor(34, 139, 34)));//rempissage
-        painter.drawPath(chemin_carte);
+        painter.drawPath(boardPath);
 
 
 
-        // DESSIN DES COMPOSANTS
+        // DESSIN DES PISTES ET COMPOSANTS EN JAUNE
 
-
-        // Configuration du pinceau pour les pistes de cuivre
-        painter.setPen(QPen(Qt::yellow, 0)); // On utilise le jaune sur fond vert pour bien voir
+        painter.setPen(QPen(Qt::yellow, 0));
         painter.setBrush(Qt::yellow);
 
-        // On récupère la matrice
-        Matrix m = pcb->get_matrix();
+        for (Layer& layer : pcb->get_layers()) {
 
-        bool premiere_couche_cuivre_dessinee = false; // Pour éviter le plat de spaghettis
+            // Filtrage des couches pleines
 
-        // On parcourt toutes les couches
-        for (Layer& layer : m.get_layersArr()) {
+            layer_type type = pcb->get_matrix().get_layer_type(layer.get_layerName());
 
-            // 🛑 FILTRE ROBUSTE : On utilise le type de la couche, pas son nom texte !
-            // SIGNAL = Couche de cuivre (pistes et pastilles)
-            if (layer.get_layer_type() != SIGNAL) {
+            // On ignore le vernis, les plans de masse et la documentation
+            if (type == SOLDER_MASK || type == POWER_GROUND || type == DOCUMENT) {
                 continue;
             }
 
-            // On ne dessine que la toute première couche de cuivre trouvée (le Top)
-            if (premiere_couche_cuivre_dessinee) {
-                continue;
+            std::string colorStr = pcb->get_matrix().get_layer_color(layer.get_layerName());
+            QColor layerColor(Qt::yellow); // Secours
+
+            if (colorStr.length() >= 6) {
+                try {
+                    // ODB++ donne un % de 00 à 99, on le convertit pour Qt (0 à 255)
+                    int r = std::stoi(colorStr.substr(0, 2)) * 255 / 99;
+                    int g = std::stoi(colorStr.substr(2, 2)) * 255 / 99;
+                    int b = std::stoi(colorStr.substr(4, 2)) * 255 / 99;
+                    layerColor = QColor(r, g, b);
+                } catch(...) {}
             }
-            premiere_couche_cuivre_dessinee = true;
+            layerColor.setAlpha(180);
 
-            qDebug() << "Affichage de la couche de cuivre :" << QString::fromStdString(layer.get_name());
-            // On parcourt toutes les formes de la couche
-            for (Form* f : layer.get_forms()) {
+            painter.setPen(QPen(layerColor, 0));
+            painter.setBrush(layerColor);
 
-                //  UNE LIGNE
+            Feature feature = layer.get_feature();
+
+            // A. Dessin des Lignes (Pistes) et des Pads (Composants)
+            for (Form* f : feature.get_forms()) {
+
                 Line* line = dynamic_cast<Line*>(f);
                 if (line != nullptr) {
-                    QPointF p1 = _view_transform.transformToView(QPointF(line->xs, line->ys));
-                    QPointF p2 = _view_transform.transformToView(QPointF(line->xe, line->ye));
+                    QPointF p1 = _view_transform.transformToView(QPointF(line->get_start().get_x(), line->get_start().get_y()));
+                    QPointF p2 = _view_transform.transformToView(QPointF(line->get_end().get_x(), line->get_end().get_y()));
                     painter.drawLine(p1, p2);
                     continue;
                 }
 
-                // UNE PASTILLE
                 Pad* pad = dynamic_cast<Pad*>(f);
                 if (pad != nullptr) {
-                    QPointF p = _view_transform.transformToView(QPointF(pad->x, pad->y));
-                    // Dessine un petit cercle de 2 pixels autour du point
+                    QPointF p = _view_transform.transformToView(QPointF(pad->get_position().get_x(), pad->get_position().get_y()));
+                    // Dessine un petit cercle jaune pour marquer le pad/composant
                     painter.drawEllipse(p, 2, 2);
                     continue;
                 }
+            }
 
-                // UN ARC
-                ArcForm* arc = dynamic_cast<ArcForm*>(f);
-                if (arc != nullptr) {
+            // B. Dessin des Surfaces (Plans de masse et grandes pastilles)
+            for (Surface* surface : feature.get_surfaces()) {
+                QPainterPath featPath;
+                for (Outline& outline : surface->get_outlineArr()) {
+                    std::vector<Edge*> edges = outline.get_edgeArr();
+                    if (edges.empty()) continue;
 
-                    QPointF p1 = _view_transform.transformToView(QPointF(arc->xs, arc->ys));
-                    QPointF p2 = _view_transform.transformToView(QPointF(arc->xe, arc->ye));
-                    painter.drawLine(p1, p2);
-                    continue;
+                    QPainterPath subPath;
+                    QPointF startPt = _view_transform.transformToView(QPointF(edges[0]->get_x(), edges[0]->get_y()));
+                    subPath.moveTo(startPt);
+
+                    for (size_t i = 1; i < edges.size(); ++i) {
+                        QPointF endPt = _view_transform.transformToView(QPointF(edges[i]->get_x(), edges[i]->get_y()));
+                        subPath.lineTo(endPt);
+                    }
+                    subPath.closeSubpath();
+                    featPath.addPath(subPath);
                 }
+                painter.drawPath(featPath);
             }
         }
     }
-
     painter.end();
 }
-
 void Viewer2D::mouseMoveEvent(QMouseEvent * event)
 {
     // Translating view need repaint
@@ -146,10 +142,11 @@ void Viewer2D::mouseMoveEvent(QMouseEvent * event)
     {
         QPoint delta = event->pos() - _mouse_position;
         _view_transform.translate(delta);
+         _mouse_position = event->pos();
         this->update();
     }
 
-    _mouse_position = event->pos();
+
 }
 
 void Viewer2D::mousePressEvent(QMouseEvent * event)
@@ -173,7 +170,7 @@ void Viewer2D::wheelEvent(QWheelEvent *event)
 {
     if(event->buttons() == Qt::NoButton)
     {
-        _view_transform.zoom(event->angleDelta().y());
+        _view_transform.zoom(event->angleDelta().y(), event->position());
         this->update();
     }
 }

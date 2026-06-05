@@ -28,13 +28,16 @@ set(PROJECT_SOURCES
     src/core/Product_Model.cpp
     src/core/Surface.cpp
     src/core/Outline.cpp
-    src/core/Segment.cpp
+    src/core/Feature.cpp
     src/core/Edge.cpp
     src/core/Matrix.cpp
-    src/core/Layer_descriptor.cpp
-    src/core/Step_descriptor.cpp
+    src/core/Layer_desc.cpp
+    src/core/Step_desc.cpp
     src/core/PCB_parser.cpp
-    src/core/form.cpp
+    src/core/Form.cpp
+    src/core/Layer.cpp
+    src/core/Symbol.cpp
+    src/core/Type.cpp
 )
 
 set(PROJECT_HEADERS
@@ -48,13 +51,15 @@ set(PROJECT_HEADERS
     include/core/Product_Model.hpp
     include/core/Surface.hpp
     include/core/Outline.hpp
-    include/core/Segment.hpp
+    include/core/Feature.hpp
     include/core/Edge.hpp
     include/core/Matrix.hpp
-    include/core/Layer_descriptor.hpp
-    include/core/Step_descriptor.hpp
-    include/core/form.hpp
-
+    include/core/Layer_desc.hpp
+    include/core/Step_desc.hpp
+    include/core/Form.hpp
+    include/core/Layer.hpp
+    include/core/Symbol.hpp
+    include/core/Type.hpp
 )
 add_executable(ODBViewer
     ${PROJECT_SOURCES}

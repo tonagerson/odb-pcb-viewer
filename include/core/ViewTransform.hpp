@@ -1,6 +1,7 @@
 #pragma once
 
 #include<QPoint>
+#include <QPointF>
 
 class ViewTransform
 {
@@ -9,11 +10,11 @@ class ViewTransform
   ~ViewTransform() = default;
 
   void translate(const QPoint& delta);
-  void zoom(const int direction);
+  void zoom(const int direction, const QPointF& pos);
 
   QPointF transformToView(const QPointF & point) const;
 
   private:
-  QPoint _translation = {300,300};
+  QPointF _translation = {300.0,300.0};
   float _zoom = {150.0f};
 };

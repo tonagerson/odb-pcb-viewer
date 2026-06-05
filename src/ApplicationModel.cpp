@@ -1,3 +1,5 @@
+#include <string_view>
+#include <string>
 #include "ApplicationModel.hpp"
 
 

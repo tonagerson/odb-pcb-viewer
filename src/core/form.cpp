@@ -1,51 +1,92 @@
-#include "core/form.hpp"
+#include "Form.hpp"
+#include <iomanip>
+#include <string>
+#include <vector>
 #include <sstream>
+#include <iostream>
 
-using namespace std;
+Form::Form(polarity const &pol, int const &dcode, int const &id, std::vector<std::pair<int,int>> attributs):
+    _pol(pol),
+    _dcode(dcode),
+    _id(id),
+    _attributs(attributs)
+{}
 
-//  read_line pour chaque forme
-
-void Pad::read_line(const std::string& line) {
-
-    istringstream iss(line);
-    string type, pol_str, orient_def;
-    int dcode;
-
-    iss >> type >> x >> y >> sym_num >> pol_str >> dcode >> orient_def;
-
-    polarity = (pol_str == "P") ? 1 : 0;
+polarity Form::get_polarity(){
+    return this->_pol;
 }
 
-void Line::read_line(const std::string& line) {
-
-    istringstream iss(line);
-    string type, pol_str;
-    int dcode;
-
-    iss >> type >> xs >> ys >> xe >> ye >> sym_num >> pol_str >> dcode;
-
-    polarity = (pol_str == "P") ? 1 : 0;
+int Form::get_dcode(){
+    return this->_dcode;
 }
 
-void ArcForm::read_line(const std::string& line) {
-
-    istringstream iss(line);
-    string type, pol_str, cw_str;
-    int dcode;
-
-    iss >> type >> xs >> ys >> xe >> ye >> xc >> yc >> sym_num >> pol_str >> dcode >> cw_str;
-
-    polarity = (pol_str == "P") ? 1 : 0;
-
-    clock_wise = (cw_str == "Y") ? true : false;
+int Form::get_id(){
+    return this->_id;
 }
 
-void Text::read_line(const std::string& line) {
+std::vector<std::pair<int,int>> Form::get_attributs(){
+    return this->_attributs;
+}
 
-    istringstream iss(line);
-    string type, pol_str, orient_def;
+Line::Line(
+    polarity const &pol,
+    int const &dcode,
+    int const &id,
+    std::vector<std::pair<int,int>> attributs,
+    Point2D const &start,
+    Point2D const &end,
+    int const &symNum
+):
+    Form(pol, dcode, id, attributs),
+    _start(start),
+    _end(end),
+    _symNum(symNum)
+{}
 
-    iss >> type >> x >> y >> font >> pol_str >> orient_def >> xsize >> ysize >> width >> content;
+int Line::Parse(std::string const &line){
+    std::istringstream iss(line);
+    std::string type;
+    double xs, ys, xe, ye;
+    int symNum, dcode;
+    char pol;
+    /* L <xs> <ys> <xe> <ye> <sym_num> <polarity> <dcode> */
+    iss >> type >> xs >> ys >> xe >> ye >> symNum >> pol >> dcode;
+    this->_start  = Point2D(xs, ys);
+    this->_end    = Point2D(xe, ye);
+    this->_symNum = symNum;
+    this->_pol    = (pol == 'P') ? POSITIVE : NEGATIVE;
+    this->_dcode  = dcode;
+    return 0;
+}
 
-    polarity = (pol_str == "P") ? 1 : 0;
+void Line::Print(std::ofstream &out){
+    std::string pol = (this->_pol == POSITIVE) ? "P" : "N";
+    out << std::fixed << std::setprecision(12);
+    out << "L " << this->_start.get_x() << " " << this->_start.get_y()
+        << " "  << this->_end.get_x()   << " " << this->_end.get_y()
+        << " "  << this->_symNum
+        << " "  << pol
+        << " "  << this->_dcode
+        << std::endl;
+}
+Point2D Line::get_start() { return this->_start; }
+Point2D Line::get_end() { return this->_end; }
+
+int Pad::Parse(std::string const &line) {
+    std::istringstream iss(line);
+    std::string type;
+    double x, y;
+    int symNum, dcode;
+    char pol;
+    // Format : P <x> <y> <apt_def> <polarity> <dcode>
+    iss >> type >> x >> y >> symNum >> pol >> dcode;
+    this->_position = Point2D(x, y);
+    this->_symNum = symNum;
+    this->_pol = (pol == 'P') ? POSITIVE : NEGATIVE;
+    this->_dcode = dcode;
+    return 0;
+}
+Point2D Pad::get_position() { return this->_position; }
+void Pad::Print(std::ofstream &out) {
+    // Fonction vide
 }
