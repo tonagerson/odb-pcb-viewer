@@ -10,6 +10,15 @@ Projet d'ingénierie logicielle réalisé en partenariat avec **Temento Systems*
 
 ![Aperçu du PCB Viewer](Images/demo.png)
 
+### Détails et fonctionnalités
+| Rendu des pistes et composants | Gestion et masquage des couches |
+| :---: | :---: |
+| ![Vue détaillée](Images/Image%201.png) | ![Contrôle des couches](Images/Image%202.png) |
+
+| Vue des signaux | Autre affichage |
+| :---: | :---: |
+| ![Tracés](Images/Image%203.png) | ![Détail](Images/Image%204.png) |
+
 ---
 
 ## Fonctionnalités principales
