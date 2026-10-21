@@ -155,7 +155,7 @@ void Viewer2D::mouseMoveEvent(QMouseEvent * event)
     {
         QPoint delta = event->pos() - _mouse_position;
         _view_transform.translate(delta);
-         _mouse_position = event->pos();
+        _mouse_position = event->pos();
         this->update();
     }
 

@@ -131,7 +131,15 @@ int Product_Model::Parse(std::string const &path){
         Feature feat;
         std::string layerPath = path + "/designodb/steps/board1/layers/" + layerName;
         feat.Parse(layerPath);
-        _layers.push_back(Layer(layerName, feat));
+       // _layers.push_back(Layer(layerName, feat));
+        //  On crée la couche
+        Layer currentLayer(layerName, feat);
+
+        //  lire les composants
+        currentLayer.parse_components(layerPath);
+
+        //  On l'ajoute au vecteur
+        _layers.push_back(currentLayer);
     }
     return 0;
 }

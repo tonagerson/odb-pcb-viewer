@@ -38,6 +38,7 @@ set(PROJECT_SOURCES
     src/core/Layer.cpp
     src/core/Symbol.cpp
     src/core/Type.cpp
+    src/core/Component.cpp
 )
 
 set(PROJECT_HEADERS
@@ -60,10 +61,12 @@ set(PROJECT_HEADERS
     include/core/Layer.hpp
     include/core/Symbol.hpp
     include/core/Type.hpp
+    include/core/Component.hpp
 )
 add_executable(ODBViewer
     ${PROJECT_SOURCES}
     ${PROJECT_HEADERS}
+
 
 )
 
